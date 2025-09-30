@@ -10,7 +10,7 @@ export default function DashboardHeader({ jobs }: Props) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Good morning, John 👋</h1>
+      <h1 className="text-2xl font-bold">Hello user👋</h1>
       <p className="text-gray-600">Track your applications and land your dream job</p>
 
       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">

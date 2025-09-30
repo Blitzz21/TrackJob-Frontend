@@ -26,7 +26,7 @@ export default function JobCard({ job, onDelete, onFollowUp, onEdit }: JobCardPr
   };
 
   return (
-    <Card className="group flex items-center justify-between p-4 rounded-xl border hover:shadow-md transition">
+    <Card className="group flex flex-row items-center justify-between p-4 rounded-xl border hover:shadow-md transition">
       {/* Left side */}
       <div className="flex items-center gap-4">
         {/* Company Icon */}
@@ -53,7 +53,7 @@ export default function JobCard({ job, onDelete, onFollowUp, onEdit }: JobCardPr
       </div>
 
       {/* Right side (buttons, only show on hover) */}
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
+      <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition ">
         <Button
           variant="outline"
           size="sm"

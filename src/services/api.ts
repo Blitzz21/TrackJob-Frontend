@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://trackjob-backend.onrender.com/api", // replace with render hosted backend for production
+  baseURL: "http://localhost:5000/api",
 });
 
 api.interceptors.request.use((config) => {

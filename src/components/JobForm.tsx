@@ -17,6 +17,7 @@ import { z } from "zod";
 // ✅ Schema (follow_up_date removed, applied_date optional)
 const jobSchema = z.object({
   company: z.string().min(2, "Company name is required"),
+  email: z.string().email("Valid email is required"),
   position: z.string().min(2, "Position is required"),
   status: z.enum(["applied", "interviewing", "rejected", "offer"]).default("applied").optional(),
   applied_date: z.string().optional(),
@@ -35,6 +36,7 @@ export default function JobForm({ onJobAdded, jobId, initialValues }: JobFormPro
     resolver: zodResolver(jobSchema),
     defaultValues: {
       company: initialValues?.company || "",
+      email: "",
       position: initialValues?.position || "",
       status: initialValues?.status || "applied",
       applied_date: initialValues?.applied_date || "",
@@ -93,6 +95,20 @@ export default function JobForm({ onJobAdded, jobId, initialValues }: JobFormPro
               <FormLabel>Position</FormLabel>
               <FormControl>
                 <Input placeholder="Job Position" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="hr@company.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

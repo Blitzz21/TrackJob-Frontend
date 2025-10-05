@@ -13,33 +13,52 @@ import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import api from "../services/api";
 import { z } from "zod";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// ✅ Schema (follow_up_date removed, applied_date optional)
 const jobSchema = z.object({
   company: z.string().min(2, "Company name is required"),
-  email: z.string().email("Valid email is required"),
   position: z.string().min(2, "Position is required"),
-  status: z.enum(["applied", "interviewing", "rejected", "offer"]).default("applied").optional(),
+  email: z.string().email("Enter a valid email"),
+  status: z.enum(["applied", "interviewing", "rejected", "offer"], {
+    error: "Status is required",
+  }),
   applied_date: z.string().optional(),
 });
 
 type JobFormData = z.infer<typeof jobSchema>;
 
-interface JobFormProps {
+export default function JobForm({
+  onJobAdded,
+  jobId,
+  initialValues,
+}: {
   onJobAdded: () => void;
   jobId?: number;
   initialValues?: Partial<JobFormData>;
-}
+}) {
+  const formattedInitialValues = initialValues
+    ? {
+        ...initialValues,
+        applied_date: initialValues.applied_date
+          ? new Date(initialValues.applied_date).toISOString().split("T")[0]
+          : "",
+      }
+    : undefined;
 
-export default function JobForm({ onJobAdded, jobId, initialValues }: JobFormProps) {
   const form = useForm<JobFormData>({
     resolver: zodResolver(jobSchema),
-    defaultValues: {
-      company: initialValues?.company || "",
+    defaultValues: formattedInitialValues || {
+      company: "",
+      position: "",
       email: "",
-      position: initialValues?.position || "",
-      status: initialValues?.status || "applied",
-      applied_date: initialValues?.applied_date || "",
+      status: "applied",
+      applied_date: "",
     },
   });
 
@@ -48,13 +67,11 @@ export default function JobForm({ onJobAdded, jobId, initialValues }: JobFormPro
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
       if (jobId) {
-        // Edit Job
         await api.put(`/jobs/${jobId}`, data, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("Job updated successfully ✅");
       } else {
-        // Add Job
         await api.post("/jobs", data, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -101,21 +118,47 @@ export default function JobForm({ onJobAdded, jobId, initialValues }: JobFormPro
           )}
         />
 
+        {/* Email */}
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Contact Email</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="hr@company.com" {...field} />
+                <Input type="email" placeholder="hr@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Applied Date (optional) */}
+        {/* Status */}
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="applied">Applied</SelectItem>
+                  <SelectItem value="interviewing">Interviewing</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="offer">Offer</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Applied Date */}
         <FormField
           control={form.control}
           name="applied_date"
@@ -130,30 +173,7 @@ export default function JobForm({ onJobAdded, jobId, initialValues }: JobFormPro
           )}
         />
 
-        {/* Status */}
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <FormControl>
-                <select
-                  {...field}
-                  className="border rounded-md p-2 w-full"
-                >
-                  <option value="applied">Applied</option>
-                  <option value="interviewing">Interviewing</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="offer">Offer</option>
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" className="w-full bg-[#111827]">
+        <Button type="submit" className="w-full bg-[#111827] text-white">
           {jobId ? "Update Job" : "Add Job"}
         </Button>
       </form>

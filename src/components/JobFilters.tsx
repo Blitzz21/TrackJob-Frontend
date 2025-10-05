@@ -14,6 +14,7 @@ export default function JobFilters({ filter, setFilter, jobs, search, setSearch 
     applied: jobs.filter((j) => j.status === "applied").length,
     interviewing: jobs.filter((j) => j.status === "interviewing").length,
     rejected: jobs.filter((j) => j.status === "rejected").length,
+    offer: jobs.filter((j) => j.status === "offer").length,
   };
 
   return (
@@ -28,7 +29,7 @@ export default function JobFilters({ filter, setFilter, jobs, search, setSearch 
 
       {/* Filter Tabs */}
       <div className="flex space-x-2">
-        {(["all", "applied", "interviewing", "rejected"] as const).map((tab) => (
+        {(["all", "applied", "interviewing", "rejected", "offer"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setFilter(tab)}

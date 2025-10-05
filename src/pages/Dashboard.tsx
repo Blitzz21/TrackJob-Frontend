@@ -5,6 +5,7 @@ import JobFilters from "../components/JobFilters";
 import JobCard from "../components/JobCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import JobForm from "../components/JobForm";
+import FollowUpModal from "../components/FollowUpModal";
 
 export default function Dashboard() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -13,6 +14,13 @@ export default function Dashboard() {
   const [showAddJob, setShowAddJob] = useState(false);
   const [showEditJob, setShowEditJob] = useState(false);
   const [editingJob, setEditingJob] = useState<any | null>(null);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+
+  const handleFollowUp = (job: any) => {
+  setSelectedJob(job);
+  setFollowUpOpen(true);
+  };
 
   const fetchJobs = async () => {
     try {
@@ -76,9 +84,7 @@ export default function Dashboard() {
               });
               fetchJobs();
             }}
-            onFollowUp={(id) => {
-              console.log("TODO: Open follow-up modal for job", id);
-            }}
+            onFollowUp={() => handleFollowUp(job)}
             onEdit={(id) => {
               setEditingJob(jobs.find((j) => j.id === id));
               setShowEditJob(true);
@@ -92,20 +98,34 @@ export default function Dashboard() {
 
       {/* Add Job Modal */}
       <Dialog open={showAddJob} onOpenChange={setShowAddJob}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent aria-describedby="edit-job-description" className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Job</DialogTitle>
           </DialogHeader>
+          <p id="edit-job-description" className="sr-only">
+            Fill in the form below to add your job application details.
+          </p>
           <JobForm onJobAdded={fetchJobs} />
         </DialogContent>
       </Dialog>
 
+      <FollowUpModal
+        open={followUpOpen}
+        onClose={() => setFollowUpOpen(false)}
+        jobId={selectedJob?.id}
+        company={selectedJob?.company}
+        position={selectedJob?.position}
+      />
+
       {/* Edit Job Modal */}
       <Dialog open={showEditJob} onOpenChange={setShowEditJob}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent aria-describedby="edit-job-description" className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Job</DialogTitle>
           </DialogHeader>
+          <p id="edit-job-description" className="sr-only">
+            Update your job application details.
+          </p>
           {editingJob && (
             <JobForm
               jobId={editingJob.id}

@@ -1,73 +1,116 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { addFollowUp } from "../services/followupService";
+import api from "../services/api";
 
-export default function FollowUpModal({ job, open, onClose, onFollowUpAdded }: any) {
-  const [date, setDate] = useState("");
-  const [type, setType] = useState("email");
-  const [content, setContent] = useState("");
+interface FollowUpModalProps {
+  open: boolean;
+  onClose: () => void;
+  jobId: number | null;
+  company?: string;
+  position?: string;
+}
 
-  const handleSubmit = async () => {
+export default function FollowUpModal({ open, onClose, jobId, company, position }: FollowUpModalProps) {
+  const [message, setMessage] = useState("");
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // fetch follow-up history
+  useEffect(() => {
+    const fetchFollowUps = async () => {
+      if (!jobId) return;
+      try {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+        const res = await api.get(`/followups/${jobId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setHistory(res.data);
+      } catch {
+        console.error("Failed to fetch follow-ups");
+      }
+    };
+    if (open) fetchFollowUps();
+  }, [jobId, open]);
+
+  const handleSend = async () => {
+    if (!jobId) return;
     try {
-      await addFollowUp({
-        jobId: job.id,
-        follow_up_date: date,
-        type,
-        content,
-      });
+      setLoading(true);
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      await api.put(
+        `/jobs/followup/${jobId}`,
+        {
+          follow_up_date: new Date(),
+          emailContent: message,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // also log it in followups table
+      await api.post(
+        `/followups`,
+        {
+          job_id: jobId,
+          follow_up_date: new Date(),
+          type: "email",
+          content: message,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       toast.success("Follow-up saved ✅");
-      onFollowUpAdded(); // refresh follow-ups
+      setMessage("");
       onClose();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Failed to save follow-up ❌");
+      toast.error(err.response?.data?.error || "Failed to send follow-up ❌");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Follow Up: {job.company}</DialogTitle>
+          <DialogTitle>Follow-up with {company}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Follow-up Date</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
+        <p className="text-sm text-gray-600 mb-3">
+          Position: <strong>{position}</strong>
+        </p>
 
-          <div>
-            <label className="text-sm font-medium">Type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="w-full border rounded px-2 py-2"
-            >
-              <option value="email">Email</option>
-              <option value="reminder">Reminder</option>
-              <option value="status">Status Update</option>
-            </select>
-          </div>
+        <Textarea
+          placeholder="Write your follow-up message..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="min-h-[120px]"
+        />
 
-          <div>
-            <label className="text-sm font-medium">Email / Notes</label>
-            <Textarea
-              placeholder="Write your follow-up email or notes here..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-          </div>
-        </div>
+        <Button
+          onClick={handleSend}
+          disabled={loading}
+          className="mt-4 w-full bg-[#111827] text-white"
+        >
+          {loading ? "Sending..." : "Send Follow-Up"}
+        </Button>
 
-        <DialogFooter>
-          <Button onClick={onClose} variant="outline">Cancel</Button>
-          <Button onClick={handleSubmit} className="bg-[#111827] text-white">Save</Button>
-        </DialogFooter>
+        {/* History */}
+        {history.length > 0 && (
+          <div className="mt-4">
+            <h4 className="font-semibold text-sm mb-2">Previous Follow-Ups:</h4>
+            <ul className="text-xs text-gray-600 space-y-1 max-h-32 overflow-y-auto">
+              {history.map((f) => (
+                <li key={f.id}>
+                  📅 {new Date(f.follow_up_date).toLocaleDateString()} — {f.content}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

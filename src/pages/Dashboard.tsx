@@ -5,23 +5,19 @@ import JobFilters from "../components/JobFilters";
 import JobCard from "../components/JobCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import JobForm from "../components/JobForm";
-import FollowUpModal from "../components/FollowUpModal";
+import FollowUpModal from "../components/FollowUpModal"; // ✅ make sure this exists
 
 export default function Dashboard() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
-  const [search, setSearch] = useState("");
   const [showAddJob, setShowAddJob] = useState(false);
-  const [showEditJob, setShowEditJob] = useState(false);
-  const [editingJob, setEditingJob] = useState<any | null>(null);
-  const [followUpOpen, setFollowUpOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
-  const handleFollowUp = (job: any) => {
-  setSelectedJob(job);
-  setFollowUpOpen(true);
-  };
+  // ✅ follow-up modal state
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
 
+  // Fetch jobs
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -38,6 +34,7 @@ export default function Dashboard() {
     fetchJobs();
   }, []);
 
+  // Filter + search jobs
   const filteredJobs = jobs.filter((job) => {
     const matchesFilter = filter === "all" || job.status === filter;
     const company = job.company?.toLowerCase() || "";
@@ -45,8 +42,28 @@ export default function Dashboard() {
     const matchesSearch =
       company.includes(search.toLowerCase()) ||
       position.includes(search.toLowerCase());
+
     return matchesFilter && matchesSearch;
   });
+
+  // ✅ When Follow Up button is clicked
+  const handleFollowUp = (jobId: number) => {
+    setSelectedJobId(jobId);
+    setShowFollowUpModal(true);
+  };
+
+  // ✅ When Delete button is clicked
+  const handleDelete = async (id: number) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      await api.delete(`/jobs/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchJobs();
+    } catch (err) {
+      console.error("Failed to delete job", err);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -77,18 +94,8 @@ export default function Dashboard() {
           <JobCard
             key={job.id}
             job={job}
-            onDelete={async (id) => {
-              const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-              await api.delete(`/jobs/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              fetchJobs();
-            }}
-            onFollowUp={() => handleFollowUp(job)}
-            onEdit={(id) => {
-              setEditingJob(jobs.find((j) => j.id === id));
-              setShowEditJob(true);
-            }}
+            onDelete={handleDelete}
+            onFollowUp={handleFollowUp}
           />
         ))}
         {filteredJobs.length === 0 && (
@@ -98,43 +105,32 @@ export default function Dashboard() {
 
       {/* Add Job Modal */}
       <Dialog open={showAddJob} onOpenChange={setShowAddJob}>
-        <DialogContent aria-describedby="edit-job-description" className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Job</DialogTitle>
           </DialogHeader>
-          <p id="edit-job-description" className="sr-only">
-            Fill in the form below to add your job application details.
-          </p>
           <JobForm onJobAdded={fetchJobs} />
         </DialogContent>
       </Dialog>
 
-      <FollowUpModal
-        open={followUpOpen}
-        onClose={() => setFollowUpOpen(false)}
-        jobId={selectedJob?.id}
-        company={selectedJob?.company}
-        position={selectedJob?.position}
-      />
-
-      {/* Edit Job Modal */}
-      <Dialog open={showEditJob} onOpenChange={setShowEditJob}>
-        <DialogContent aria-describedby="edit-job-description" className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Job</DialogTitle>
-          </DialogHeader>
-          <p id="edit-job-description" className="sr-only">
-            Update your job application details.
-          </p>
-          {editingJob && (
-            <JobForm
-              jobId={editingJob.id}
-              initialValues={editingJob}
-              onJobAdded={fetchJobs}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* ✅ Follow Up Modal */}
+      {selectedJobId && (() => {
+        const selectedJob = jobs.find(job => job.id === selectedJobId);
+        if (!selectedJob) return null;
+        return (
+          <FollowUpModal
+            jobId={selectedJobId}
+            company={selectedJob.company}
+            email={selectedJob.email}
+            open={showFollowUpModal}
+            onClose={() => {
+              setShowFollowUpModal(false);
+              setSelectedJobId(null);
+            }}
+            onFollowUpSent={fetchJobs}
+          />
+        );
+      })()}
     </div>
   );
 }

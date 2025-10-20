@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import api from "../services/api";
 import DashboardHeader from "../components/DashboardHeader";
 import JobFilters from "../components/JobFilters";
 import JobCard from "../components/JobCard";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import FollowUpModal from "../components/FollowUpModal";
 import AddJobForm from "../components/AddJobForm";
 import EditJobForm from "../components/EditJobForm";
@@ -17,10 +22,11 @@ export default function Dashboard() {
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
 
-  // ✅ Fetch all jobs for logged-in user
-  const fetchJobs = async () => {
+  /** ✅ Fetch all jobs for logged-in user */
+  const fetchJobs = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await api.get("/jobs", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -28,32 +34,36 @@ export default function Dashboard() {
     } catch (err) {
       console.error("❌ Failed to fetch jobs:", err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+  }, [fetchJobs]);
 
-  // ✅ Filter + search logic
-  const filteredJobs = jobs.filter((job) => {
-    const matchesFilter = filter === "all" || job.status === filter;
-    const company = job.company?.toLowerCase() || "";
-    const position = job.position?.toLowerCase() || "";
-    const matchesSearch =
-      company.includes(search.toLowerCase()) || position.includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  /** ✅ Derived filtered list (memoized for performance) */
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      const matchesFilter = filter === "all" || job.status === filter;
+      const company = job.company?.toLowerCase() || "";
+      const position = job.position?.toLowerCase() || "";
+      const matchesSearch =
+        company.includes(search.toLowerCase()) ||
+        position.includes(search.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [jobs, filter, search]);
 
-  // ✅ Follow-up modal trigger
+  /** ✅ Follow-up modal trigger */
   const handleFollowUp = (jobId: number) => {
     setSelectedJobId(jobId);
     setShowFollowUpModal(true);
   };
 
-  // ✅ Job delete
+  /** ✅ Delete handler */
   const handleDelete = async (id: number) => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       await api.delete(`/jobs/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -63,31 +73,34 @@ export default function Dashboard() {
     }
   };
 
+  /** ✅ Get selected job for follow-up */
+  const selectedJob = useMemo(
+    () => jobs.find((j) => j.id === selectedJobId),
+    [jobs, selectedJobId]
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <div className="max-w-[1400px] mx-auto px-8 py-10">
+      <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
         {/* === Dashboard Header === */}
-        <div className="mb-12">
-          <DashboardHeader jobs={jobs} />
-        </div>
+        <DashboardHeader jobs={jobs} />
 
         {/* === Applications Section === */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           {/* Section Header */}
-          <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50/40 flex items-center justify-between">
+          <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 sm:px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50/50">
             <div>
-              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
                 Applications
               </h2>
               <p className="text-sm text-slate-500 mt-1">
-                Manage and track your job applications
+                Manage and track your job applications easily
               </p>
             </div>
             <button
               onClick={() => setShowAddJob(true)}
-              className="group relative px-6 py-3 bg-slate-900 text-white rounded-xl font-medium text-sm
-                         hover:bg-slate-800 transition-all duration-200 shadow-sm hover:shadow-md
-                         active:scale-[0.98] flex items-center gap-2"
+              className="group flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-xl 
+                         hover:bg-slate-800 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               <svg
                 className="w-4 h-4 transition-transform group-hover:rotate-90 duration-300"
@@ -98,16 +111,16 @@ export default function Dashboard() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2.5}
+                  strokeWidth={2.2}
                   d="M12 4v16m8-8H4"
                 />
               </svg>
               Add Application
             </button>
-          </div>
+          </header>
 
           {/* Filters */}
-          <div className="px-8 py-6 bg-slate-50/60 border-b border-slate-100">
+          <div className="px-6 sm:px-8 py-5 bg-slate-50/60 border-b border-slate-100">
             <JobFilters
               filter={filter}
               setFilter={setFilter}
@@ -118,7 +131,7 @@ export default function Dashboard() {
           </div>
 
           {/* Job List */}
-          <div className="p-6">
+          <div className="p-5 sm:p-6">
             {filteredJobs.length > 0 ? (
               <div className="space-y-3">
                 {filteredJobs.map((job, index) => (
@@ -134,7 +147,7 @@ export default function Dashboard() {
                       job={job}
                       onDelete={handleDelete}
                       onFollowUp={handleFollowUp}
-                      onEdit={() => setEditingJob(job)} // ✅ Edit modal trigger
+                      onEdit={() => setEditingJob(job)}
                     />
                   </div>
                 ))}
@@ -176,12 +189,14 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-        </div>
+        </section>
 
         {/* === Add Job Modal === */}
         <Dialog open={showAddJob} onOpenChange={setShowAddJob}>
           <DialogContent className="sm:max-w-lg">
-            <DialogHeader><DialogTitle>Add Job</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Add Job</DialogTitle>
+            </DialogHeader>
             <AddJobForm onJobAdded={fetchJobs} />
           </DialogContent>
         </Dialog>
@@ -190,31 +205,28 @@ export default function Dashboard() {
         {editingJob && (
           <Dialog open={!!editingJob} onOpenChange={() => setEditingJob(null)}>
             <DialogContent className="sm:max-w-lg">
-              <DialogHeader><DialogTitle>Edit Job</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>Edit Job</DialogTitle>
+              </DialogHeader>
               <EditJobForm job={editingJob} onJobUpdated={fetchJobs} />
             </DialogContent>
           </Dialog>
         )}
 
         {/* === Follow-Up Modal === */}
-        {selectedJobId &&
-          (() => {
-            const selectedJob = jobs.find((job) => job.id === selectedJobId);
-            if (!selectedJob) return null;
-            return (
-              <FollowUpModal
-                jobId={selectedJobId}
-                company={selectedJob.company}
-                email={selectedJob.email}
-                open={showFollowUpModal}
-                onClose={() => {
-                  setShowFollowUpModal(false);
-                  setSelectedJobId(null);
-                }}
-                onFollowUpSent={fetchJobs}
-              />
-            );
-          })()}
+        {selectedJob && (
+          <FollowUpModal
+            jobId={selectedJob.id}
+            company={selectedJob.company}
+            email={selectedJob.email}
+            open={showFollowUpModal}
+            onClose={() => {
+              setShowFollowUpModal(false);
+              setSelectedJobId(null);
+            }}
+            onFollowUpSent={fetchJobs}
+          />
+        )}
       </div>
     </div>
   );

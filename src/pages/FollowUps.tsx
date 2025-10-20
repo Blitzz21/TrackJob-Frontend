@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Trash2, Calendar, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 interface FollowUp {
   id: number;
@@ -48,7 +50,7 @@ export default function FollowUps() {
       await api.delete(`/followups/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      toast.success("Scheduled follow-up deleted 🗑️");
+      toast.success("Follow-up deleted 🗑️");
       fetchFollowUps();
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Failed to delete follow-up ❌");
@@ -67,24 +69,43 @@ export default function FollowUps() {
     );
   }
 
-  // Split into scheduled and sent
   const scheduled = followUps.filter(
     (f) => new Date(f.follow_up_date) > new Date()
   );
+  const sent = followUps.filter(
+    (f) =>
+      f.follow_up_date && new Date(f.follow_up_date).getFullYear() !== 1970
+  );
 
   return (
-    <div className="px-6 lg:px-8 py-8 max-w-7xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-gray-800">📅 Follow-ups</h1>
+    <div className="px-6 lg:px-10 py-10 max-w-6xl mx-auto">
+      {/* Header Section */}
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          Follow-ups
+        </h1>
+        <p className="text-gray-500 mt-1 text-sm">
+          Manage and review your upcoming and sent follow-ups with clarity.
+        </p>
+      </div>
 
-      {/* Scheduled Follow-ups */}
+      {/* Scheduled Section */}
       <section>
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Scheduled Follow-ups
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Upcoming Follow-ups
+          </h2>
+          <Badge variant="secondary" className="text-gray-600">
+            {scheduled.length} scheduled
+          </Badge>
+        </div>
+
         {scheduled.length === 0 ? (
-          <p className="text-gray-500 text-sm">No scheduled follow-ups.</p>
+          <div className="border border-dashed border-gray-200 rounded-xl p-8 text-center text-gray-500 text-sm">
+            No scheduled follow-ups yet.
+          </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <AnimatePresence>
               {scheduled.map((f) => (
                 <motion.div
@@ -93,26 +114,35 @@ export default function FollowUps() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <Card className="p-4 flex justify-between items-center shadow-sm border border-gray-100 hover:shadow-md transition rounded-xl">
+                  <Card className="p-5 border border-gray-100 shadow-sm hover:shadow-md transition rounded-2xl flex flex-col justify-between">
                     <div>
-                      <div className="font-semibold text-gray-800 flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-500" />
-                        {f.company}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-500" />
+                          <h3 className="font-semibold text-gray-900">
+                            {f.company}
+                          </h3>
+                        </div>
+                        <Badge className="bg-blue-50 text-blue-700">
+                          Scheduled
+                        </Badge>
                       </div>
-                      <p className="text-sm text-gray-500">{f.email}</p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                      <p className="text-sm text-gray-500 mt-1">{f.email}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
                         <Calendar className="w-3 h-3" />
                         {new Date(f.follow_up_date).toLocaleDateString()}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(f.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
                     </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(f.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-gray-500" />
-                    </Button>
                   </Card>
                 </motion.div>
               ))}
@@ -121,36 +151,48 @@ export default function FollowUps() {
         )}
       </section>
 
-      {/* Sent Follow-ups */}
+      <Separator className="my-10" />
+
+      {/* Sent Section */}
       <section>
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Sent Follow-ups
-        </h2>
-        {followUps.filter(f => f.follow_up_date && new Date(f.follow_up_date).getFullYear() !== 1970).length === 0 ? (
-          <p className="text-gray-500 text-sm">No sent follow-ups.</p>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Sent Follow-ups
+          </h2>
+          <Badge variant="secondary" className="text-gray-600">
+            {sent.length} sent
+          </Badge>
+        </div>
+
+        {sent.length === 0 ? (
+          <div className="border border-dashed border-gray-200 rounded-xl p-8 text-center text-gray-500 text-sm">
+            No sent follow-ups.
+          </div>
         ) : (
-          <div className="grid gap-3">
-            {followUps
-              .filter(
-                (f) =>
-                  f.follow_up_date &&
-                  new Date(f.follow_up_date).getFullYear() !== 1970
-              )
-              .map((f) => (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {sent.map((f) => (
               <Card
                 key={f.id}
-                className="p-4 border border-gray-100 rounded-xl shadow-sm"
+                className="p-5 border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition"
               >
-                <div className="font-semibold text-gray-800 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-500" />
-                  {f.company}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <h3 className="font-semibold text-gray-900">
+                      {f.company}
+                    </h3>
+                  </div>
+                  <Badge className="bg-green-50 text-green-700">Sent</Badge>
                 </div>
+
                 <p className="text-sm text-gray-500">{f.email}</p>
-                <div className="text-xs text-gray-400 mt-1">
+                <div className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
                   Sent on {new Date(f.follow_up_date).toLocaleDateString()}
                 </div>
+
                 {f.content && (
-                  <p className="text-sm text-gray-600 mt-2 border-t border-gray-100 pt-2">
+                  <p className="text-sm text-gray-600 mt-3 leading-relaxed border-t border-gray-100 pt-3">
                     {f.content}
                   </p>
                 )}

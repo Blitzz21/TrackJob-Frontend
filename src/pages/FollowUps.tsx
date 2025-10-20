@@ -71,12 +71,9 @@ export default function FollowUps() {
   const scheduled = followUps.filter(
     (f) => new Date(f.follow_up_date) > new Date()
   );
-  const sent = followUps.filter(
-    (f) => new Date(f.follow_up_date) <= new Date()
-  );
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="px-6 lg:px-8 py-8 max-w-7xl mx-auto space-y-8">
       <h1 className="text-2xl font-bold text-gray-800">📅 Follow-ups</h1>
 
       {/* Scheduled Follow-ups */}
@@ -129,11 +126,17 @@ export default function FollowUps() {
         <h2 className="text-lg font-semibold mb-3 text-gray-700">
           Sent Follow-ups
         </h2>
-        {sent.length === 0 ? (
+        {followUps.filter(f => f.follow_up_date && new Date(f.follow_up_date).getFullYear() !== 1970).length === 0 ? (
           <p className="text-gray-500 text-sm">No sent follow-ups.</p>
         ) : (
           <div className="grid gap-3">
-            {sent.map((f) => (
+            {followUps
+              .filter(
+                (f) =>
+                  f.follow_up_date &&
+                  new Date(f.follow_up_date).getFullYear() !== 1970
+              )
+              .map((f) => (
               <Card
                 key={f.id}
                 className="p-4 border border-gray-100 rounded-xl shadow-sm"

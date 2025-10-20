@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +28,6 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const navigate = useNavigate();
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -49,7 +47,7 @@ export default function Login() {
       }
       localStorage.setItem("token", res.data.token);
       toast.success("Login successful! Welcome back.");
-      navigate("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Invalid credentials");
     }

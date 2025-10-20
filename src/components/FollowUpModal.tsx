@@ -34,10 +34,6 @@ export default function FollowUpModal({
   const [content, setContent] = useState("");
   const [sendNow, setSendNow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const endpoint = sendNow
-  ? "/followups"
-  : `/jobs/${jobId}/followup`; // ✅ schedule
-
 
   const handleSend = async () => {
     try {
@@ -49,24 +45,21 @@ export default function FollowUpModal({
       setLoading(true);
       const token =
         localStorage.getItem("token") || sessionStorage.getItem("token");
-      const endpoint = sendNow
-        ? "/followups"
-        : `/jobs/${jobId}/followup`;
 
-      await api.post(
-        endpoint,
-        {
-          job_id: jobId,
-          follow_up_date: sendNow
-            ? new Date().toISOString().split("T")[0]
-            : date,
-          content,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const payload = {
+        follow_up_date: sendNow ? new Date().toISOString() : date,
+        content,
+        sendNow,
+      };
+
+      await api.post(`/jobs/${jobId}/followup`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       toast.success(
-        sendNow ? "Follow-up email sent successfully ✅" : "Follow-up scheduled 📅"
+        sendNow
+          ? "Follow-up email sent successfully ✅"
+          : "Follow-up scheduled 📅"
       );
       onFollowUpSent();
       onClose();
@@ -112,7 +105,9 @@ export default function FollowUpModal({
 
             {/* Message */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Message</label>
+              <label className="text-sm font-medium text-gray-700">
+                Message
+              </label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -122,7 +117,7 @@ export default function FollowUpModal({
               />
             </div>
 
-            {/* Schedule Date (only visible if not send now) */}
+            {/* Schedule Date */}
             <AnimatePresence>
               {!sendNow && (
                 <motion.div
@@ -145,7 +140,7 @@ export default function FollowUpModal({
               )}
             </AnimatePresence>
 
-            {/* Footer controls */}
+            {/* Footer Controls */}
             <div className="flex justify-between items-center pt-3 border-t border-gray-100">
               <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
                 <input

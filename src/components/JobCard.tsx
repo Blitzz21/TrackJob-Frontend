@@ -26,17 +26,17 @@ export default function JobCard({ job, onDelete, onFollowUp, onEdit }: JobCardPr
   };
 
   return (
-    <Card className="group flex flex-row items-center justify-between p-4 rounded-xl border hover:shadow-md transition">
+    <Card className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl border hover:shadow-md transition">
       {/* Left side */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-start sm:items-center gap-4 w-full sm:w-auto">
         {/* Company Icon */}
-        <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#111827] text-white">
+        <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#111827] text-white flex-shrink-0">
           <Building2 className="w-5 h-5" />
         </div>
 
         {/* Job Info */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col flex-1">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold text-base">{job.company}</h3>
             <Badge className={`${statusColors[job.status]} capitalize`}>
               {job.status}
@@ -52,12 +52,20 @@ export default function JobCard({ job, onDelete, onFollowUp, onEdit }: JobCardPr
         </div>
       </div>
 
-      {/* Right side (buttons, only show on hover) */}
-      <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition ">
+      {/* Right side (buttons) */}
+      <div
+        className="
+          flex flex-wrap sm:flex-nowrap
+          items-center gap-2
+          justify-start sm:justify-end
+          w-full sm:w-auto
+          md:opacity-0 sm:group-hover:opacity-100 sm:transition
+        "
+      >
         <Button
           variant="outline"
           size="sm"
-          className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+          className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 w-full sm:w-auto"
           onClick={() => onEdit?.(job.id)}
         >
           Edit
@@ -66,14 +74,16 @@ export default function JobCard({ job, onDelete, onFollowUp, onEdit }: JobCardPr
         <Button
           variant="outline"
           size="sm"
-          className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          className="bg-blue-50 text-blue-700 hover:bg-blue-100 w-full sm:w-auto"
           onClick={() => onFollowUp?.(job.id)}
         >
           Follow up
         </Button>
+
         <Button
           variant="ghost"
           size="icon"
+          className="w-full sm:w-9 sm:h-9 flex justify-center"
           onClick={() => onDelete?.(job.id)}
         >
           <Trash2 className="w-4 h-4 text-red-500" />

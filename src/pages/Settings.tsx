@@ -5,11 +5,13 @@ import api from "../services/api";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useEffect, useState } from "react";
 
 const schema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.string().email("Invalid email address."),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
 });
@@ -18,6 +20,9 @@ export default function Settings() {
   const form = useForm({
     resolver: zodResolver(schema),
   });
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const onSubmit = async (data: any) => {
     try {
@@ -31,58 +36,101 @@ export default function Settings() {
     }
   };
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
   useEffect(() => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    api.get("/email/settings", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setEmail(res.data.email_address || ""));
+    api
+      .get("/email/settings", { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => setEmail(res.data.email_address || ""));
   }, []);
 
   const handleSave = async () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    await api.post("/email/settings", { email, encryptedPassword: password }, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    toast.success("Email settings saved ✅");
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      await api.post(
+        "/email/settings",
+        { email, encryptedPassword: password },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Email settings saved ✅");
+    } catch {
+      toast.error("Failed to save email settings ❌");
+    }
   };
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
+    <div className="p-6 max-w-3xl mx-auto space-y-8">
+      <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <p className="text-muted-foreground">
+        Manage your account, password, and email configuration below.
+      </p>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <Input placeholder="Full name" {...form.register("name")} />
-        <Input placeholder="Email" type="email" {...form.register("email")} />
-        <Input placeholder="Current password" type="password" {...form.register("currentPassword")} />
-        <Input placeholder="New password" type="password" {...form.register("newPassword")} />
-        <Button type="submit" className="w-full bg-[#111827]">Save Changes</Button>
-      </form>
-      <div className="max-w-md mx-auto mt-10 space-y-4">
-      <h1 className="text-xl font-semibold">Email Settings</h1>
-      <input
-        className="w-full border p-2 rounded"
-        type="email"
-        placeholder="Your email address"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        className="w-full border p-2 rounded"
-        type="password"
-        placeholder="App password or email password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button
-        className="bg-[#111827] text-white px-4 py-2 rounded"
-        onClick={handleSave}
-      >
-        Save Settings
-      </button>
+      {/* Profile Settings */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Profile Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Full Name</label>
+              <Input placeholder="Full name" {...form.register("name")} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Email</label>
+              <Input type="email" placeholder="Email address" {...form.register("email")} />
+            </div>
+
+            <Separator className="my-4" />
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Current Password</label>
+              <Input type="password" placeholder="Current password" {...form.register("currentPassword")} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">New Password</label>
+              <Input type="password" placeholder="New password" {...form.register("newPassword")} />
+            </div>
+
+            <Button type="submit" className="w-full mt-4">
+              Save Profile
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Email Settings */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>Email Configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Email Address</label>
+            <Input
+              type="email"
+              placeholder="Your email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">App Password</label>
+            <Input
+              type="password"
+              placeholder="App or email password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <Button onClick={handleSave} className="w-full">
+            Save Email Settings
+          </Button>
+        </CardContent>
+      </Card>
     </div>
-    </div>
-    
   );
 }
